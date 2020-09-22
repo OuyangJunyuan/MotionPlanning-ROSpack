@@ -25,31 +25,6 @@ public:
 };
 
 template<typename T>
-class DoubleS {
-private:
-    /*
-     * p: B样条阶数
-     * m: U=[u_0,...,u_m],共m+1个节点
-     * n: P=[p_0,...,p_n],共n+1个控制点
-     * knot: 节点向量U集合
-     * ControlPoint: P控制点集合
-     */
-    int p, n,m;
-    double *DR, *DL, *B,*knot,t;
-    vector<T> ControlPoint;
-    void gen_BasisFunc_now(double u, int i);
-public:
-    ~DoubleS();
-    DoubleS(){};
-    /*
-     * cp:  控制点集合
-     * c :  c^n连续性，c=1起始点速度连续且0，c=2起始点加速度连续且=0，c=3起始点加加速度连续且=0，...
-     */
-    void Configure(vector<T> &cp,int c, int p,double t);
-    T Mapping(double now);
-};
-
-template<typename T>
 class BSpline {
 private:
     /*
@@ -70,5 +45,29 @@ public:
     T Mapping(double now);
 };
 
+//一种online 实现方法：https://zhuanlan.zhihu.com/p/139265234
+class DoubleS{
+private:
+    /*
+     * 指令参数:    S, vs, ve, as, ae, Ts, sigma;
+     * 限制参数:    Vmin, Vmax, Amin, Amax, Jmin, Jmax;
+     * 规划参数:    th, tk, sk, vk, ak, jk, vk1, ak1, jk1,_Amin,_Amax,_Jmin,_Jmax;
+     */
+    double S, vs, ve, as, ae, Ts, sigma;
+    double Vmin, Vmax, Amin, Amax, Jmin, Jmax;
+    double th, tk, sk, vk, ak, jk, vk1, ak1, jk1,_Amin,_Amax,_Jmin,_Jmax,Tj2a, Tj2b, Td, hk;
+    bool is_InStopPhase=false,is_AccelerationBegin=false;
+    Vector3d cmdvector;
+public:
+    ~DoubleS() {};
+    DoubleS() {};
+    /*
+    *cmd:   S, v0, v1, a0, a1, Ts, sigma;
+    *limit: Vmin, Vmax, Amin, Amax, Jmin, Jmax;
+    */
+    void Configure(vector<double>& cmd,vector<double>& limit);
+    double Mapping(double now);
+    double Next();
+};
 #include "MotionPlan.tpp"
 #endif

@@ -1,5 +1,6 @@
 #include "MotionPlan.h"
 #include <math.h>
+#include <iostream>
 
 
 #pragma region LFPB
@@ -59,10 +60,7 @@ T LFPB<T>::Mapping(double now) {
 }
 #pragma endregion
 
-#pragma region DoubleS
 
-
-#pragma endregion
 
 #pragma region Bspline
 //二分法求解属于第几个节点段u ∈ [u_i,u_i+1)
@@ -105,7 +103,8 @@ void gen_knot(double *knot,int m,int p)
 
     for (int j = 0; j < m+1; ++j)
     {
-        cout<<knot[j]<<",";
+        cout<<knot[j]<<","<<endl;
+
 
     }cout<<endl;
 }
@@ -174,7 +173,138 @@ T BSpline<T>::Mapping(double now)
 	return pout;
 }
 
+
+
+
 #pragma endregion
 
+#pragma region DoubleS
 
+void DoubleS::Configure(vector<double>& cmd,vector<double>& limit)
+{
+	//S, v0, v1, a0, a1, Ts, sigma;
+	S = cmd[0];
+	vs = cmd[1];
+	ve = cmd[2];
+	as = cmd[3];
+	ae = cmd[4];
+	Ts = cmd[5];
+	sigma = cmd[6]*Vector3d(S,ve-vs,ae-as).norm();
+
+	//Vmin, Vmax, Amin, Amax, Jmin, Jmax;
+	Vmin = limit[0];
+	Vmax = limit[1];
+	Amin = limit[2];
+	Amax = limit[3];
+	Jmin = limit[4];
+	Jmax = limit[5];
+
+	th = tk = sk = jk = 0;
+	vk = vk1 = vs;
+	ak = ak1 = as;
+	jk1 = jk;
+
+    Tj2a=Tj2b=Td=hk=0;
+
+    if(ve>=Vmax) {
+        //加速停止的情况交换min max 使式子统一
+        _Amin = Amax;
+        _Amax = Amin;
+        _Jmin = Jmax;
+        _Jmax = Jmin;
+    }else
+    {
+        _Amin = Amin;
+        _Amax = Amax;
+        _Jmin = Jmin;
+        _Jmax = Jmax;
+    }
+    if(vs<=Vmax)
+        is_AccelerationBegin=true;
+    cmdvector=Vector3d(S,ve,ae);
+}
+double DoubleS::Next() {
+    if ((cmdvector - Vector3d(sk, vk, ak)).norm() < sigma)
+        return sk;
+    if (!is_InStopPhase) {
+        //还未进入停止阶段(匀速段之后) - 式子(4)(5) 与 (8)(9) 只是Jmin和Jmax互换了，这里合并优化
+        Tj2a = (_Amin - ak) / _Jmin;
+        Tj2b = (ae - _Amin) / _Jmax;
+        Td = (ve - vk) / _Amin + Tj2a * (_Amin - ak) / (2 * _Amin) + Tj2b * (_Amin - ae) / (2 * _Amin);
+        if (Td - (Tj2a + Tj2b) < 0) {
+            double temp = sqrt((_Jmax - _Jmin) * (ak * ak * _Jmax - _Jmin * (ae * ae + 2 * _Jmax * (vk - ve))));
+            Tj2a = -ak / _Jmin + temp / (_Jmin * (_Jmin - _Jmax));
+            Tj2b = ae / _Jmax + temp / (_Jmax * (_Jmax - _Jmin));
+            Td = Tj2a + Tj2b;
+        }
+        hk = 0.5 * ak * Td * Td +
+             (double) 1.0 / 6.0 *
+             (_Jmin * Tj2a * (3 * Td * Td - 3 * Td * Tj2a + Tj2a * Tj2a) + _Jmax * Tj2b * Tj2b * Tj2b) +
+             Td * vk;
+        if (hk >= (S - sk)) {
+            is_InStopPhase = true;
+            th = tk;//当前时刻就是停止阶段开始时刻
+        }
+    }
+    if (is_InStopPhase) {
+        //进入停止阶段
+        //如果是减速停止的 - 式子(7)
+        double delta = tk - th;
+        if (delta >= 0 && delta < Tj2a)
+            jk = _Jmin;
+        else if (delta < Td - Tj2b)
+            jk = 0;
+        else
+            jk = _Jmax;
+    } else {
+        //未进入停止阶段
+        double temp1 = vk - ak * ak / (2 * Jmax), temp2 = vk - ak * ak / (2 * Jmin);
+        if (!is_AccelerationBegin) {
+            //起始阶段为减速阶段 - 公式(3)
+            if (temp1 > Vmax) {
+                if (ak > Amin)
+                    jk = Jmin;
+                else
+                    jk = 0;
+            } else {
+                if (ak < 0)
+                    jk = Jmax;
+                else
+                    jk = 0;
+            }
+        } else{
+            //起始阶段为加速阶段 - 公式(2)
+            if (temp2 < Vmax) {
+                if (ak < Amax)
+                    jk = Jmax;
+                else
+                    jk = 0;
+            } else {
+                if (ak > 0)
+                    jk = Jmin;
+                else
+                    jk = 0;
+            }
+        }
+    }
+    tk+=Ts;
+
+    ak = ak1 + Ts/2*(jk1+jk);
+    vk = vk1 + Ts/2*(ak1+ak);
+    sk += Ts/2*(vk1+vk);
+
+    jk1=jk;
+    ak1=ak;
+    vk1=vk;
+
+    return sk;
+}
+
+double DoubleS::Mapping(double now)
+{
+	return 0.0;
+}
+
+
+#pragma endregion
 
