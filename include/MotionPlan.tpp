@@ -180,52 +180,54 @@ T BSpline<T>::Mapping(double now)
 
 #pragma region DoubleS
 
-void DoubleS::Configure(vector<double>& cmd,vector<double>& limit)
-{
-	//S, v0, v1, a0, a1, Ts, sigma;
-	S = cmd[0];
-	vs = cmd[1];
-	ve = cmd[2];
-	as = cmd[3];
-	ae = cmd[4];
-	Ts = cmd[5];
-	sigma = cmd[6]*Vector3d(S,ve-vs,ae-as).norm();
+void DoubleS::Configure(double S, double vs, double ve, double as, double ae, double Ts, double precision,
+                        double Vmin,double Vmax,double Amin,double Amax,double Jmin,double Jmax) {
+    //重新初始化本规划器
+    is_InStopPhase = false, is_AccelerationBegin = false;
+    th = tk = sk = jk = Tj2a = Tj2b = Td = hk = 0;
+    vk = vk1 = vs;
+    ak = ak1 = as;
+    jk1 = jk;
 
-	//Vmin, Vmax, Amin, Amax, Jmin, Jmax;
-	Vmin = limit[0];
-	Vmax = limit[1];
-	Amin = limit[2];
-	Amax = limit[3];
-	Jmin = limit[4];
-	Jmax = limit[5];
+    //S, v0, v1, a0, a1, Ts, sigma;
+    this->S = S;
+    this->vs = vs;
+    this->ve = ve;
+    this->as = as;
+    this->ae = ae;
+    this->Ts = Ts;
+    this->sigma = precision * Vector3d(S - 0, ve - vs, ae - as).norm();
 
-	th = tk = sk = jk = 0;
-	vk = vk1 = vs;
-	ak = ak1 = as;
-	jk1 = jk;
+    //Vmin, Vmax, Amin, Amax, Jmin, Jmax;
+    this->Vmin = Vmin;
+    this->Vmax = Vmax;
+    this->Amin = Amin;
+    this->Amax = Amax;
+    this->Jmin = Jmin;
+    this->Jmax = Jmax;
 
-    Tj2a=Tj2b=Td=hk=0;
-
-    if(ve>=Vmax) {
+    //根据指令调整参数
+    if (ve >= Vmax) {
         //加速停止的情况交换min max 使式子统一
         _Amin = Amax;
         _Amax = Amin;
         _Jmin = Jmax;
         _Jmax = Jmin;
-    }else
-    {
+    } else {
         _Amin = Amin;
         _Amax = Amax;
         _Jmin = Jmin;
         _Jmax = Jmax;
     }
-    if(vs<=Vmax)
-        is_AccelerationBegin=true;
-    cmdvector=Vector3d(S,ve,ae);
+
+    if (vs <= Vmax)
+        is_AccelerationBegin = true;
+    cmdvector = Vector3d(S, ve, ae);
+
 }
 double DoubleS::Next() {
     if ((cmdvector - Vector3d(sk, vk, ak)).norm() < sigma)
-        return sk;
+        return S;
     if (!is_InStopPhase) {
         //还未进入停止阶段(匀速段之后) - 式子(4)(5) 与 (8)(9) 只是Jmin和Jmax互换了，这里合并优化
         Tj2a = (_Amin - ak) / _Jmin;

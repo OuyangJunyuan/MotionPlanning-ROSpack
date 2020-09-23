@@ -65,7 +65,8 @@ public:
     *cmd:   S, v0, v1, a0, a1, Ts, sigma;
     *limit: Vmin, Vmax, Amin, Amax, Jmin, Jmax;
     */
-    void Configure(vector<double>& cmd,vector<double>& limit);
+    void Configure(double S, double vs, double ve, double as, double ae, double Ts, double precision,
+                   double Vmin,double Vmax,double Amin,double Amax,double Jmin,double Jmax);
     double Mapping(double now);
     double Next();
 };

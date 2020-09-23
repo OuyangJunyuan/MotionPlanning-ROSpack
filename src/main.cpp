@@ -15,39 +15,21 @@ int main(int argc, char **argv)
 
     
     double Vmin=-10,Vmax=10,Amin=-10,Amax=10,Jmin=-30,Jmax=30;
-    double S=20, vs=15, ve=0, as=5  , ae=0, Ts=0.001, sigma=0.05;
+    double S=25, vs=15, ve=0, as=5  , ae=0, Ts=0.001, sigma=0.05;
 
     double dt=0.001;
     double last=0,v=vs,v1=vs,a=as,a1=as,j=0;
 
 
-    vector<double> cmd,limit;
-    limit.push_back(Vmin);
-    limit.push_back(Vmax);
-    limit.push_back(Amin);
-    limit.push_back(Amax);
-    limit.push_back(Jmin);
-    limit.push_back(Jmax);
-    cmd.push_back(S);
-    cmd.push_back(vs);
-    cmd.push_back(ve);
-    cmd.push_back(as);
-    cmd.push_back(ae);
-    cmd.push_back(Ts);
-    cmd.push_back(sigma);
     DoubleS ds;
-    ds.Configure(cmd,limit);
+    ds.Configure(S,vs,ve,as,ae,Ts,sigma,Vmin,Vmax,Amin,Amax,Jmin,Jmax);
 
     ros::Rate loop_rate(1000);
     while (ros::ok())
     {
         std_msgs::Float64MultiArray msg;
         double output=ds.Next();
-        if(output==NAN)
-        {
-            cout<<"planning run over"<<endl;
-            while(1);
-        }
+
         msg.data.push_back(output);
         v=(output-last)/dt;
         msg.data.push_back(v);
