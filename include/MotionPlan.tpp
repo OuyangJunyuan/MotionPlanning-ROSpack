@@ -180,10 +180,10 @@ T BSpline<T>::Mapping(double now)
 
 #pragma region DoubleS
 #define SWAP(_a,_b) do{typeof(_a) _c; _c=_a; _a=_b;_b=_c; }while(0)
-void DoubleS::Configure(double so, double se, double vs, double ve, double as, double ae, double Ts, double precision,
+void DoubleS::Configure(double sa, double se, double vs, double ve, double as, double ae, double Ts, double precision,
                         double Vmin,double Vmax,double Amin,double Amax,double Jmin,double Jmax) {
     //修改后允许行程为负
-    dir = so <= se ? 1 : -1;
+    dir = sa <= se ? 1 : -1;
     if (dir == -1) {
         //如果是反向运行
         Vmin *= dir;
@@ -212,9 +212,9 @@ void DoubleS::Configure(double so, double se, double vs, double ve, double as, d
     jk1 = jk;
 
     //S, v0, v1, a0, a1, Ts, sigma;
-    this->so = so;
+    this->sa = sa;
     this->se = se;
-    this->S = fabs(se - so);
+    this->S = fabs(se - sa);
     this->vs = vs;
     this->ve = ve;
     this->as = as;
@@ -248,7 +248,7 @@ void DoubleS::Configure(double so, double se, double vs, double ve, double as, d
 }
 void DoubleS::Connect(double se, double ve, double ae)
 {
-    Configure(so+dir*sk,se,dir*this->vk,ve,dir*this->ak,ae,Ts,precision,Vmin,Vmax,Amin,Amax,Jmin,Jmax);
+    Configure(sa+dir*sk,se,dir*this->vk,ve,dir*this->ak,ae,Ts,precision,Vmin,Vmax,Amin,Amax,Jmin,Jmax);
 }
 
 void DoubleS::Stop(double se)
@@ -256,12 +256,15 @@ void DoubleS::Stop(double se)
     Connect(se,0,0);
 }
 double DoubleS::Next() {
-    if ((cmdvector - Vector3d(sk, vk, ak)).norm() < sigma)
-    {
+    if ((cmdvector - Vector3d(sk, vk, ak)).norm() <= sigma) {
+        sk = fabs(se - sa);
+        vk = ve;
+        ak = ae;
         return se;
     }
     if (!is_InStopPhase) {
         //还未进入停止阶段(匀速段之后) - 式子(4)(5) 与 (8)(9) 只是Jmin和Jmax互换了，这里合并优化
+        Tj2a = (_Amin - ak) / _Jmin;
         Tj2a = (_Amin - ak) / _Jmin;
         Tj2b = (ae - _Amin) / _Jmax;
         Td = (ve - vk) / _Amin + Tj2a * (_Amin - ak) / (2 * _Amin) + Tj2b * (_Amin - ae) / (2 * _Amin);
@@ -306,7 +309,7 @@ double DoubleS::Next() {
                 else
                     jk = 0;
             }
-        } else{
+        } else {
             //起始阶段为加速阶段 - 公式(2)
             if (temp2 < Vmax) {
                 if (ak < Amax)
@@ -321,17 +324,17 @@ double DoubleS::Next() {
             }
         }
     }
-    tk+=Ts;
+    tk += Ts;
 
-    ak = ak1 + Ts/2*(jk1+jk);
-    vk = vk1 + Ts/2*(ak1+ak);
-    sk += Ts/2*(vk1+vk);
+    ak = ak1 + Ts / 2 * (jk1 + jk);
+    vk = vk1 + Ts / 2 * (ak1 + ak);
+    sk += Ts / 2 * (vk1 + vk);
 
-    jk1=jk;
-    ak1=ak;
-    vk1=vk;
+    jk1 = jk;
+    ak1 = ak;
+    vk1 = vk;
 
-    return so+dir*sk;
+    return sa + dir * sk;
 }
 
 

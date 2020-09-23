@@ -53,7 +53,7 @@ private:
      * 限制参数:    Vmin, Vmax, Amin, Amax, Jmin, Jmax;
      * 规划参数:    th, tk, sk, vk, ak, jk, vk1, ak1, jk1,_Amin,_Amax,_Jmin,_Jmax;
      */
-    double so,se,S, vs, ve, as, ae, Ts, sigma,precision;
+    double sa,se,S, vs, ve, as, ae, Ts, sigma,precision;
     double Vmin, Vmax, Amin, Amax, Jmin, Jmax;
     double th, tk, sk, vk, ak, jk, vk1, ak1, jk1,_Amin,_Amax,_Jmin,_Jmax,Tj2a, Tj2b, Td, hk;
     bool is_InStopPhase=false,is_AccelerationBegin=false,is_Stop=false;

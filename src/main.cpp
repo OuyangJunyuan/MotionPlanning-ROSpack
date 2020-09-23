@@ -14,7 +14,7 @@ int main(int argc, char **argv)
     ros::Publisher chatter_pub = n.advertise<std_msgs::Float64MultiArray>("MP", 1000);
 
     
-    double Vmin=-50,Vmax=50,Amin=-20,Amax=20,Jmin=-30,Jmax=30;
+    double Vmin=-20,Vmax=20,Amin=-20,Amax=20,Jmin=-30,Jmax=30;
     double S=-25, vs=3, ve=-3, as=3  , ae=-3, Ts=0.001, sigma=0.005;
 
     double dt=0.001;
@@ -31,11 +31,18 @@ int main(int argc, char **argv)
         double output=ds.Next();
 
         msg.data.push_back(output);
+
         v=(output-last)/dt;
+        if(fabs(v)>fabs(Vmax))
+            v=v1;
         msg.data.push_back(v);
         a=(v-v1)/dt;
+        if(fabs(a)>fabs(Amax))
+            a=a1;
         msg.data.push_back(a);
         j=(a-a1)/dt;
+        if(fabs(j)>fabs(Jmax))
+            j=Jmax;
         msg.data.push_back(j);
 
         last=output;
