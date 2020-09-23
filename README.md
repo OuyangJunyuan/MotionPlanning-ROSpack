@@ -65,7 +65,7 @@ B-Spline：可以做到多维度多(控制)点任意阶连续性轨迹规划，�
 
 https://zhuanlan.zhihu.com/p/139265234
 
-Double S：即规划量是路程的时候，加速度是梯形，加加速度冲击。更平滑，无启动冲击。
+Double S：即规划量是路程的时候，加加速度是梯形，加加加速度冲击。更平滑，无启动冲击。
 
 TODO：现在是单轴(维/自由度)规划，可以增加笛卡尔空间下规划的功能(和LFPB一样规划模长)。
 
@@ -97,3 +97,10 @@ ds.Connect(x,xx,xxx);
 ds.Stop(se);
 ```
 
+图一：折现为目标点连线图，规划路径为曲线，开头上翘是因为起始速度是3。
+
+图四：这个在线积分算法会有加加速度在匀速期间震荡的现象，影响好像不大。
+
+可以看出，除了加加加速度有冲击之外，加、加加速度都是连续的。
+
+![image-20200923210341562](https://upload-images.jianshu.io/upload_images/15852708-413d678fb3eebd76.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240)
