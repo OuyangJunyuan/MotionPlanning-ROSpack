@@ -179,24 +179,49 @@ T BSpline<T>::Mapping(double now)
 #pragma endregion
 
 #pragma region DoubleS
-
-void DoubleS::Configure(double S, double vs, double ve, double as, double ae, double Ts, double precision,
+#define SWAP(_a,_b) do{typeof(_a) _c; _c=_a; _a=_b;_b=_c; }while(0)
+void DoubleS::Configure(double so, double se, double vs, double ve, double as, double ae, double Ts, double precision,
                         double Vmin,double Vmax,double Amin,double Amax,double Jmin,double Jmax) {
+    //修改后允许行程为负
+    dir = so <= se ? 1 : -1;
+    if (dir == -1) {
+        //如果是反向运行
+        Vmin *= dir;
+        Vmax *= dir;
+        Amin *= dir;
+        Amax *= dir;
+        Jmin *= dir;
+        Jmax *= dir;
+        vs *= dir;
+        ve *= dir;
+        as *= dir;
+        ae *= dir;
+        SWAP(Vmin, Vmax);
+        SWAP(Amin, Amax);
+        SWAP(Jmin, Jmax);
+    }
+
+
     //重新初始化本规划器
-    is_InStopPhase = false, is_AccelerationBegin = false;
+    is_InStopPhase = false;
+    is_AccelerationBegin = false;
+
     th = tk = sk = jk = Tj2a = Tj2b = Td = hk = 0;
     vk = vk1 = vs;
     ak = ak1 = as;
     jk1 = jk;
 
     //S, v0, v1, a0, a1, Ts, sigma;
-    this->S = S;
+    this->so = so;
+    this->se = se;
+    this->S = fabs(se - so);
     this->vs = vs;
     this->ve = ve;
     this->as = as;
     this->ae = ae;
     this->Ts = Ts;
-    this->sigma = precision * Vector3d(S - 0, ve - vs, ae - as).norm();
+    this->precision = precision;
+    this->sigma = precision * Vector3d(S, ve - vs, ae - as).norm();
 
     //Vmin, Vmax, Amin, Amax, Jmin, Jmax;
     this->Vmin = Vmin;
@@ -207,27 +232,34 @@ void DoubleS::Configure(double S, double vs, double ve, double as, double ae, do
     this->Jmax = Jmax;
 
     //根据指令调整参数
+    _Amin = Amin;
+    _Amax = Amax;
+    _Jmin = Jmin;
+    _Jmax = Jmax;
     if (ve >= Vmax) {
         //加速停止的情况交换min max 使式子统一
-        _Amin = Amax;
-        _Amax = Amin;
-        _Jmin = Jmax;
-        _Jmax = Jmin;
-    } else {
-        _Amin = Amin;
-        _Amax = Amax;
-        _Jmin = Jmin;
-        _Jmax = Jmax;
+        SWAP(_Amin,_Amax);
+        SWAP(_Jmin,_Jmax);
     }
-
     if (vs <= Vmax)
         is_AccelerationBegin = true;
-    cmdvector = Vector3d(S, ve, ae);
 
+    cmdvector = Vector3d(S, ve, ae);
+}
+void DoubleS::Connect(double se, double ve, double ae)
+{
+    Configure(so+dir*sk,se,dir*this->vk,ve,dir*this->ak,ae,Ts,precision,Vmin,Vmax,Amin,Amax,Jmin,Jmax);
+}
+
+void DoubleS::Stop(double se)
+{
+    Connect(se,0,0);
 }
 double DoubleS::Next() {
     if ((cmdvector - Vector3d(sk, vk, ak)).norm() < sigma)
-        return S;
+    {
+        return se;
+    }
     if (!is_InStopPhase) {
         //还未进入停止阶段(匀速段之后) - 式子(4)(5) 与 (8)(9) 只是Jmin和Jmax互换了，这里合并优化
         Tj2a = (_Amin - ak) / _Jmin;
@@ -299,13 +331,10 @@ double DoubleS::Next() {
     ak1=ak;
     vk1=vk;
 
-    return sk;
+    return so+dir*sk;
 }
 
-double DoubleS::Mapping(double now)
-{
-	return 0.0;
-}
+
 
 
 #pragma endregion

@@ -14,15 +14,15 @@ int main(int argc, char **argv)
     ros::Publisher chatter_pub = n.advertise<std_msgs::Float64MultiArray>("MP", 1000);
 
     
-    double Vmin=-10,Vmax=10,Amin=-10,Amax=10,Jmin=-30,Jmax=30;
-    double S=25, vs=15, ve=0, as=5  , ae=0, Ts=0.001, sigma=0.05;
+    double Vmin=-50,Vmax=50,Amin=-20,Amax=20,Jmin=-30,Jmax=30;
+    double S=-25, vs=3, ve=-3, as=3  , ae=-3, Ts=0.001, sigma=0.005;
 
     double dt=0.001;
     double last=0,v=vs,v1=vs,a=as,a1=as,j=0;
 
 
     DoubleS ds;
-    ds.Configure(S,vs,ve,as,ae,Ts,sigma,Vmin,Vmax,Amin,Amax,Jmin,Jmax);
+    ds.Configure(0,S,vs,ve,as,ae,Ts,sigma,Vmin,Vmax,Amin,Amax,Jmin,Jmax);
 
     ros::Rate loop_rate(1000);
     while (ros::ok())

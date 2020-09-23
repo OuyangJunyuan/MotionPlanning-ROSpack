@@ -49,25 +49,28 @@ public:
 class DoubleS{
 private:
     /*
-     * 指令参数:    S, vs, ve, as, ae, Ts, sigma;
+     * 指令参数:    so,se,S, vs, ve, as, ae, Ts, sigma;
      * 限制参数:    Vmin, Vmax, Amin, Amax, Jmin, Jmax;
      * 规划参数:    th, tk, sk, vk, ak, jk, vk1, ak1, jk1,_Amin,_Amax,_Jmin,_Jmax;
      */
-    double S, vs, ve, as, ae, Ts, sigma;
+    double so,se,S, vs, ve, as, ae, Ts, sigma,precision;
     double Vmin, Vmax, Amin, Amax, Jmin, Jmax;
     double th, tk, sk, vk, ak, jk, vk1, ak1, jk1,_Amin,_Amax,_Jmin,_Jmax,Tj2a, Tj2b, Td, hk;
-    bool is_InStopPhase=false,is_AccelerationBegin=false;
+    bool is_InStopPhase=false,is_AccelerationBegin=false,is_Stop=false;
     Vector3d cmdvector;
+    int dir;
 public:
     ~DoubleS() {};
     DoubleS() {};
     /*
     *cmd:   S, v0, v1, a0, a1, Ts, sigma;
     *limit: Vmin, Vmax, Amin, Amax, Jmin, Jmax;
+    *每次调用Configure,Connect,Stop后 需要循环调用NEXT得到下一个dt的位移输出。
     */
-    void Configure(double S, double vs, double ve, double as, double ae, double Ts, double precision,
+    void Configure(double so, double se, double vs, double ve, double as, double ae, double Ts, double precision,
                    double Vmin,double Vmax,double Amin,double Amax,double Jmin,double Jmax);
-    double Mapping(double now);
+    void Connect(double se, double ve, double ae);
+    void Stop(double se);
     double Next();
 };
 #include "MotionPlan.tpp"
