@@ -13,7 +13,7 @@ int main(int argc, char **argv)
     //发布到的话题名，在本节点名称空间下/nodename/topicname，第二个参数为消息队列大小，还可以指定话题被接受者连接与断开连接回调函数。
     ros::Publisher chatter_pub = n.advertise<std_msgs::Float64MultiArray>("MP", 1000);
 
-    
+
     double Vmin=-20,Vmax=20,Amin=-20,Amax=20,Jmin=-30,Jmax=30;
     double S=-25, vs=3, ve=-3, as=3  , ae=-3, Ts=0.001, sigma=0.005;
 

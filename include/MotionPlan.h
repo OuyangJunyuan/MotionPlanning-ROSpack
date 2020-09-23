@@ -69,7 +69,7 @@ public:
     */
     void Configure(double so, double se, double vs, double ve, double as, double ae, double Ts, double precision,
                    double Vmin,double Vmax,double Amin,double Amax,double Jmin,double Jmax);
-    void Connect(double se, double ve, double ae);
+    void ConnectConnect(double se, double ve, double ae);
     void Stop(double se);
     double Next();
 };
